@@ -22,4 +22,4 @@ async def hash(ctx, hash):
     embed.set_footer(text="https://github.com/HashPals/Search-That-Hash") #if you like to
     await ctx.send(embed=embed)
 
-bot.run("MzM0NzExNTYzMzI1ODAwNDU5.WWY6bw.20Ta-ohVLf6n7wMbFR6XmocopNU")
+bot.run("")
