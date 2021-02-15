@@ -16,10 +16,13 @@ async def hash(ctx, hash):
     result = json.loads(api.return_as_fast_json([hash]))
     embed = discord.Embed(title="Hashy - Cracks hashes via Search-That-Hash API", description=hash, color=random.randint(0,16777215)) #,color=Hex code
     try:
-        embed.add_field(name="Plaintext", value=result[0][hash], inline=False)
+        if result[0][hash][0] == {}:
+            embed.add_field(name="Plaintext", value="Could not crack hash", inline=False)
+        else:
+            embed.add_field(name="Plaintext", value=result[0][hash], inline=False)
     except:
         embed.add_field(name="Plaintext", value="Could not crack hash", inline=False)
     embed.set_footer(text="https://github.com/HashPals/Search-That-Hash") #if you like to
     await ctx.send(embed=embed)
 
-bot.run("MzM0NzExNTYzMzI1ODAwNDU5.WWY6bw.20Ta-ohVLf6n7wMbFR6XmocopNU")
+bot.run("")
