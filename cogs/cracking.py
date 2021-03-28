@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from functools import cache
 
 import json
 from search_that_hash import api
@@ -10,6 +9,7 @@ from name_that_hash.runner import api_return_hashes_as_json
 class Hashes(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.bot.cache = {}
 
     def get_discord_embed(self, color):
         embed = discord.Embed(title=self.title, description=self.desc, color=color)
@@ -48,8 +48,9 @@ class Hashes(commands.Cog):
         embed = self.get_discord_embed(color)
         return embed
 
-    @cache
     def get_json_result(self):
+        if self.hash in self.bot.cache:
+            return self.bot.cache[self.hash]
         return api.return_as_fast_json([self.hash])[0]
 
     def get_results(self):
@@ -57,8 +58,7 @@ class Hashes(commands.Cog):
         self.result = self.get_json_result()
         desc = self.hash
 
-        try:
-
+        if self.hash in self.result:
             if self.result[self.hash] == "Could not crack hash":
                 self.desc = f"Failed to crack {self.hash} :cry:"
                 color = 0xDC143C
@@ -94,8 +94,7 @@ class Hashes(commands.Cog):
 
                 return self.get_types(embed)
 
-        except Exception as e:
-            print(e)
+        else:
             color = 0xDC143C
             embed = self.get_discord_embed(color)
             embed.add_field(
@@ -109,7 +108,7 @@ class Hashes(commands.Cog):
         self.hash = hash.lower()
         message = await ctx.send(embed=self.defult_search())
         await message.edit(embed=self.get_results())
-    
+
 
 def setup(bot):
     bot.add_cog(Hashes(bot))
