@@ -58,6 +58,8 @@ class Hashes(commands.Cog):
         self.result = self.get_json_result()
         desc = self.hash
 
+        print(self.result)
+
         if self.hash in self.result:
             if self.result[self.hash] == "Could not crack hash":
                 self.desc = f"Failed to crack {self.hash} :cry:"
