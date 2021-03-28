@@ -57,7 +57,7 @@ class Hashes(commands.Cog):
         self.result = self.get_json_result()
         desc = self.hash
 
-        if self.hash in self.result:
+        try:
 
             if self.result[self.hash] == "Could not crack hash":
                 self.desc = f"Failed to crack {self.hash} :cry:"
@@ -94,13 +94,13 @@ class Hashes(commands.Cog):
 
                 return self.get_types(embed)
 
-        else:
+        except Exception as e:
+            print(e)
             color = 0xDC143C
             embed = self.get_discord_embed(color)
             embed.add_field(
                 name="Error :", value="Something went wrong with the program"
             )
-            print(self.results)
             return embed
 
     @commands.command()
