@@ -100,6 +100,7 @@ class Hashes(commands.Cog):
             embed.add_field(
                 name="Error :", value="Something went wrong with the program"
             )
+            print(self.results)
             return embed
 
     @commands.command()
@@ -108,7 +109,7 @@ class Hashes(commands.Cog):
         self.hash = hash.lower()
         message = await ctx.send(embed=self.defult_search())
         await message.edit(embed=self.get_results())
-
+    
 
 def setup(bot):
     bot.add_cog(Hashes(bot))
