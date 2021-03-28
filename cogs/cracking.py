@@ -5,7 +5,6 @@ import json
 from search_that_hash import api
 from name_that_hash.runner import api_return_hashes_as_json
 
-
 class Hashes(commands.Cog, name="Hash Cracking"):
     def __init__(self, bot):
         self.bot = bot
@@ -49,6 +48,8 @@ class Hashes(commands.Cog, name="Hash Cracking"):
         return embed
 
     def get_json_result(self):
+        if len(self.bot.cache) > 10:
+            self.bot.cache.pop(next(iter(self.bot.cache)))
         if self.hash in self.bot.cache:
             return self.bot.cache[self.hash]
         else:
