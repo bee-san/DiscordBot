@@ -1,87 +1,114 @@
 import discord
 from discord.ext import commands
-from discord import Embed
+from functools import cache
 
 import json
 from search_that_hash import api
 from name_that_hash.runner import api_return_hashes_as_json
-import asyncio
+
 
 class Hashes(commands.Cog):
-	def __init__(self, bot):
-		self.bot = bot
+    def __init__(self, bot):
+        self.bot = bot
 
-	def get_discord_embed(self, desc, color, title):
-		embed = discord.Embed(title=title, description=desc, color=color)
-		embed.set_footer(text='https://github.com/HashPals/Search-That-Hash')
-		return embed
+    def get_discord_embed(self, color):
+        embed = discord.Embed(title=self.title, description=self.desc, color=color)
+        embed.set_footer(text="Search that hash is licensed under GPLv3")
+        return embed
 
-	@commands.command()
-	async def crack(self,ctx, hash):
+    def get_types(self, embed):
+        if self.result[self.hash] != "Could not crack hash":
+            value = "Type(s): " + ", ".join(self.result[self.hash]["types"])
+            if not self.result[self.hash]["verified"]:
+                value += "\nThis hash is NOT verified, we cannot prove the plaintext / type is equal to this hash."
+        else:
+            to_print = []
+            types = json.loads(api_return_hashes_as_json([self.hash]))
+            for i in range(len(types[self.hash])):
+                if i > 5:
+                    break
+                to_print.append(types[self.hash][i]["name"])
 
-		### CREATING EMBED ###
+            value = "Type(s): " + ", ".join(to_print)
 
-		desc = f"Searching {hash} :sunglasses:"
-		color = 0xFFA500
-		title = "Hashy - Cracks hashes via Search-That-Hash API"
+        value += f"\n\n{self.ctx.author.mention}\nhttps://github.com/HashPals/Search-That-Hash"
 
-		embed = self.get_discord_embed(desc, color, title)
+        embed.add_field(
+            name="Additonal Info : ",
+            value=value,
+            inline=False,
+        )
+        return embed
 
-		message = await ctx.send(embed=embed)
+    def defult_search(self):
 
-		### GETTING RESULTS ###
+        self.desc = f"Searching {self.hash} :sunglasses:"
+        color = 0xFFA500
+        self.title = "Hashy - Cracks hashes via Search-That-Hash API"
+        embed = self.get_discord_embed(color)
+        return embed
 
-		result = api.return_as_fast_json([hash])[0]
-		desc = hash
+    @cache
+    def get_json_result(self):
+        return api.return_as_fast_json([self.hash])[0]
 
-		### REACTING ###
+    def get_results(self):
 
-		def check(reaction, user):
-			return user == ctx.author and str(reaction.emoji) == "✅"
+        self.result = self.get_json_result()
+        desc = self.hash
 
-		### PRINTING ###
+        if self.hash in self.result:
 
-		if hash in result:
-			if result[hash] == 'Could not crack hash':
-				color = 0xDC143C
-				embed = self.get_discord_embed(desc, color, title)
-				embed.add_field(name="Failed : ", value="Hash was not found in any database. React ✅ to see possible hash types.")
-				await message.edit(embed=embed)
-				while True:
-					try:
-						reaction, user = await self.bot.wait_for("reaction_add", timeout=60, check=check)						
-						types = json.loads(api_return_hashes_as_json([hash]))
-						color = 0x0800ff
-						embed_types = self.get_discord_embed(desc, color, title)
-						to_print = []
+            if self.result[self.hash] == "Could not crack hash":
+                self.desc = f"Failed to crack {self.hash} :cry:"
+                color = 0xDC143C
+                embed = self.get_discord_embed(color)
+                embed.add_field(
+                    name="Failed : ",
+                    value="Hash was not found in any database.",
+                )
 
-						for i in range(len(types[hash])):
-							if i > 5:
-								break
-							to_print.append(types[hash][i]['name'])
+                return self.get_types(embed)
 
-						embed.add_field(name="Possible Types : ", value=", ".join(to_print), inline=False)
-						await message.edit(embed=embed)
-					except asyncio.TimeoutError:
-						pass
+            elif self.result[self.hash] == "No types found for this hash.":
+                self.desc = f"Failed to crack {self.hash} :cry:"
+                color = 0xDC143C
+                embed = self.get_discord_embed(color)
+                embed.add_field(name="Failed : ", value="Hash type not found")
+                embed.add_field(
+                    name="Ciphey : ",
+                    value=f"Maybe this isn't actually a hash and instead, encrypted text. Check out our sister project ciphey for more info - https://github.com/Ciphey/Ciphey \n\n{self.ctx.author.mention}\nhttps://github.com/HashPals/Search-That-Hash",
+                    inline=False,
+                )
 
-			elif result[hash] == 'No types found for this hash.':
-				color = 0xDC143C
-				embed = self.get_discord_embed(desc, color, title)
-				embed.add_field(name="Failed : ", value="Hash type could not be found")
-				embed.add_field(name="Ciphey : ", value="Maybe this isn't actully a hash and instead, encrypted text. Check out our sister project ciphey for more info - https://github.com/Ciphey/Ciphey", inline=False)
+                return embed
 
-			else:
-				color = 0x00ff00
-				embed = self.get_discord_embed(desc, color, title)
-				embed.add_field(name="Cracked :", value=result[hash])
-		else:
-			color = 0xDC143C
-			desc = "Something went wrong :cry:"
-			embed = self.get_discord_embed(desc, color, title)
+            else:
+                self.desc = f"Cracked {self.hash} :smile:"
+                color = 0x00FF00
+                embed = self.get_discord_embed(color)
+                embed.add_field(
+                    name="Cracked :",
+                    value=self.result[self.hash]["plaintext"],
+                )
 
-		await message.edit(embed=embed)
-		await ctx.send(ctx.author.mention)
+                return self.get_types(embed)
+
+        else:
+            color = 0xDC143C
+            embed = self.get_discord_embed(color)
+            embed.add_field(
+                name="Error :", value="Something went wrong with the program"
+            )
+            return embed
+
+    @commands.command()
+    async def crack(self, ctx, hash):
+        self.ctx = ctx
+        self.hash = hash.lower()
+        message = await ctx.send(embed=self.defult_search())
+        await message.edit(embed=self.get_results())
+
 
 def setup(bot):
-	bot.add_cog(Hashes(bot))
+    bot.add_cog(Hashes(bot))
