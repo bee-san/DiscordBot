@@ -90,7 +90,7 @@ class hacking_modules:
             )
         else:
             embed = self.get_embed(
-                "Success", "Ciphey decryped this text", "Success 👍"
+                "Success", "Ciphey decrypted this text", "Success 👍"
             )
             embed.add_field(name="Result:", value=out)
 
