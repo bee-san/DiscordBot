@@ -5,7 +5,7 @@ if __name__ == "__main__":
 
     bot = commands.Bot(command_prefix="$")
 
-    exts = ["cogs.rev_shell_gen"]
+    exts = ["cogs.tools"]
 
     for ext in exts:
         bot.load_extension(ext)
